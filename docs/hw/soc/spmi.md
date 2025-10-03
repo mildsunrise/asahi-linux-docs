@@ -174,7 +174,7 @@ The amount of data bytes is determined by the OPCODE field in the command/reply 
 
 The general structure of a command word is as follows:
 
- - [Bits 0..7] **OPCODE**: 8-bit SPMI command opcode. Note that this isn't always the exact opcode that will be sent through the bus, sometimes it just identifies the general command type (e.g. write zero register, read register), see SPMI commands below
+ - [Bits 0..7] **OPCODE**: 8-bit SPMI command opcode. Note that this isn't always the exact opcode that will be sent through the bus, sometimes it just identifies the general command type (e.g. register 0 write, read register), see SPMI commands below
  - [Bits 8..11] **SLAVE_ID**: 4-bit slave address
  - [Bit 15] **NOTIFY**: If set, the NOTIFY interrupt line is asserted when this command completes (see interrupts below)
  - [Bits 16..31] **PARAM**: 16-bit space for extra opcode-dependent parameters that aren't carried in the data bytes
@@ -198,9 +198,9 @@ For power state management commands (reset, sleep, shutdown, wakeup) that carry 
 
 ### Basic register access
 
-For commands that read or write a single register (read register, write register, write zero register) the PARAM field is structured as follows:
+For commands that read or write a single register (read register, write register, register 0 write) the PARAM field is structured as follows:
 
- - [Bits 0..7] **ADDRESS**: Register address, 0..0x1F (unused for the write zero register command)
+ - [Bits 0..7] **ADDRESS**: Register address, 0..0x1F (unused for the register 0 write command)
  - [Bits 8..15] **VALUE**: Written register value (unused for the read register command)
 
 In the OPCODE field, any bits specifying this info are ignored and replaced with the relevant bits from PARAM. No data bytes follow the command, and 0 (writes) or 1 (reads) data bytes follow the reply.
@@ -218,11 +218,13 @@ The amount of data bytes following the command (writes) or reply (reads) is the 
 Each of the FIFOs has a capacity of 64 words. Because all known batches can be at most 5 words, the controller can in the worst case hold up to 12 outstanding SPMI commands.
 
 STATUS and CURSORS return information about the TX FIFO in the low half-word, and the RX FIFO in the high half-word. A half-word in STATUS has the following structure:
+
  - [Bits 0..7] **COUNT**: Amount of words in the FIFO, 0..0x40
  - [Bit 8] **EMPTY**: Set if the FIFO is empty, e.g. COUNT == 0
  - [Bit 9] **FULL**: Set if the FIFO is full, e.g. COUNT == 0x40
 
 A half-word in CURSORS has the following structure:
+
  - [Bits 0..7] **WRITE_CURSOR**: Buffer position of the next word to push, 0..0x3F
  - [Bits 8..15] **READ_CURSOR**: Buffer position of the next word to consume, 0..0x3F
 
