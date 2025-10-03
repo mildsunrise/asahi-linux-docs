@@ -14,32 +14,7 @@ This document is written based on gen3. The revisions seem to have backwards com
 
 The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
 
-<style>
-    .regmap {
-        margin: 2em 0;
-        max-width: 60em;
-    }
-    .regmap th[scope="col"] {
-        width: 25%;
-    }
-    .regmap td, .regmap th {
-        border: 1px solid;
-        text-align: center;
-        vertical-align: middle;
-        padding: .3em .5em;
-    }
-    .regmap .reg-unused {
-        opacity: 0.5;
-        background: grey;
-    }
-    .regmap { border-collapse: collapse; }
-    .regmap th { border: none; font-weight: normal; }
-    .regmap td { font-weight: bold; }
-    .regmap .reg-unused { border: none; }
-    .regmap .reg-access { font-weight: normal; }
-</style>
-
-<table class="regmap">
+<table class="register-map">
   <tr>
     <th>Addr</th>
     <th scope="col">0x0</th>
@@ -49,9 +24,9 @@ The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
   </tr>
   <tr>
     <th scope="row">0x00</th>
-    <td>STATUS <span class="reg-access">(RO)</span></td>
-    <td>TX_PUSH <span class="reg-access">(WO)</span></td>
-    <td>RX_PULL <span class="reg-access">(RO)</span></td>
+    <td><strong class="reg-name">STATUS</strong> <span class="reg-access">(RO)</span></td>
+    <td><strong class="reg-name">TX_PUSH</strong> <span class="reg-access">(WO)</span></td>
+    <td><strong class="reg-name">RX_PULL</strong> <span class="reg-access">(RO)</span></td>
     <td colspan="1" class="reg-unused"></td>
   </tr>
   <tr>
@@ -60,14 +35,14 @@ The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
   </tr>
   <tr>
     <th scope="row">0x20</th>
-    <td colspan="4" rowspan="2">BUS_IRQ_MASK <span class="reg-access">(RW)</span></td>
+    <td colspan="4" rowspan="2"><strong class="reg-name">BUS_IRQ_MASK</strong> <span class="reg-access">(RW)</span></td>
   </tr>
   <tr>
     <th scope="row">0x30</th>
   </tr>
   <tr>
     <th scope="row">0x40</th>
-    <td>IRQ_MASK <span class="reg-access">(RW)</span></td>
+    <td><strong class="reg-name">IRQ_MASK</strong> <span class="reg-access">(RW)</span></td>
     <td colspan="3" class="reg-unused"></td>
   </tr>
   <tr>
@@ -76,14 +51,14 @@ The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
   </tr>
   <tr>
     <th scope="row">0x60</th>
-    <td colspan="4" rowspan="2">BUS_IRQ_ACK <span class="reg-access">(RW)</span></td>
+    <td colspan="4" rowspan="2"><strong class="reg-name">BUS_IRQ_ACK</strong> <span class="reg-access">(RW)</span></td>
   </tr>
   <tr>
     <th scope="row">0x70</th>
   </tr>
   <tr>
     <th scope="row">0x80</th>
-    <td>IRQ_ACK <span class="reg-access">(RW)</span></td>
+    <td><strong class="reg-name">IRQ_ACK</strong> <span class="reg-access">(RW)</span></td>
     <td colspan="3" class="reg-unused"></td>
   </tr>
   <tr>
@@ -92,20 +67,20 @@ The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
   </tr>
   <tr>
     <th scope="row">0xA0</th>
-    <td>CONFIG1 <span class="reg-access">(RW)</span></td>
-    <td>ACTION1 <span class="reg-access">(WO)</span></td>
+    <td><strong class="reg-name">CONFIG1</strong> <span class="reg-access">(RW)</span></td>
+    <td><strong class="reg-name">ACTION1</strong> <span class="reg-access">(WO)</span></td>
     <td colspan="2" class="reg-unused"></td>
   </tr>
   <tr>
     <th scope="row">0xB0</th>
-    <td>CURSORS <span class="reg-access">(RO)</span></td>
-    <td>PEEK_POS <span class="reg-access">(RW)</span></td>
-    <td>PEEK_VALUE <span class="reg-access">(RO)</span></td>
-    <td>STATUS1 <span class="reg-access">(RO)</span></td>
+    <td><strong class="reg-name">CURSORS</strong> <span class="reg-access">(RO)</span></td>
+    <td><strong class="reg-name">PEEK_POS</strong> <span class="reg-access">(RW)</span></td>
+    <td><strong class="reg-name">PEEK_VALUE</strong> <span class="reg-access">(RO)</span></td>
+    <td><strong class="reg-name">STATUS1</strong> <span class="reg-access">(RO)</span></td>
   </tr>
 </table>
 
-<!--<table class="regmap">
+<!--<table class="register-map">
   <tr>
   <th>Addr</th>
   <th scope="col">0x00</th>

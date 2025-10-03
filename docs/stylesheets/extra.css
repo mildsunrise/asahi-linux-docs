@@ -20,3 +20,24 @@
   }
 }
 
+.register-map {
+  margin: 2em 0;
+  max-width: 60em;
+  border-collapse: collapse;
+
+  th[scope="col"] { width: 25%; }
+  td, th {
+    text-align: center;
+    vertical-align: middle;
+    padding: .3em .5em;
+    font-weight: normal;
+  }
+  td {
+    border: 1px solid;
+  }
+  td.reg-unused {
+    border: none;
+    opacity: 0.5;
+    background: grey;
+  }
+}
