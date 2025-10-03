@@ -49,9 +49,9 @@ The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
   </tr>
   <tr>
     <th scope="row">0x00</th>
-    <td>FIFO_STATUS <span class="reg-access">(RO)</span></td>
-    <td>FIFO_TX <span class="reg-access">(WO)</span></td>
-    <td>FIFO_RX <span class="reg-access">(RO)</span></td>
+    <td>STATUS <span class="reg-access">(RO)</span></td>
+    <td>TX_PUSH <span class="reg-access">(WO)</span></td>
+    <td>RX_PULL <span class="reg-access">(RO)</span></td>
     <td colspan="1" class="reg-unused"></td>
   </tr>
   <tr>
@@ -93,13 +93,14 @@ The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
   <tr>
     <th scope="row">0xA0</th>
     <td>CONFIG1 <span class="reg-access">(RW)</span></td>
-    <td colspan="3" class="reg-unused"></td>
+    <td>ACTION1 <span class="reg-access">(WO)</span></td>
+    <td colspan="2" class="reg-unused"></td>
   </tr>
   <tr>
     <th scope="row">0xB0</th>
-    <td>FIFO_CURSORS <span class="reg-access">(RO)</span></td>
-    <td>CONFIG2 <span class="reg-access">(RW)</span></td>
-    <td>UNK1 <span class="reg-access">(RO)</span></td>
+    <td>CURSORS <span class="reg-access">(RO)</span></td>
+    <td>PEEK_POS <span class="reg-access">(RW)</span></td>
+    <td>PEEK_VALUE <span class="reg-access">(RO)</span></td>
     <td>STATUS1 <span class="reg-access">(RO)</span></td>
   </tr>
 </table>
@@ -119,9 +120,9 @@ The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
 
   <tr>
   <th scope="row">0x00</th>
-  <td>FIFO_STATUS</td>
-  <td>FIFO_TX</td>
-  <td>FIFO_RX</td>
+  <td>STATUS</td>
+  <td>TX_PUSH</td>
+  <td>RX_PULL</td>
   <td colspan="5" class="reg-unused">(unknown / unused)</td>
   </tr>
   <tr>
@@ -146,16 +147,16 @@ The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
   <th scope="row">0xA0</th>
   <td>CONFIG_0</td>
   <td colspan="3" class="reg-unused">(unknown / unused)</td>
-  <td>FIFO_CURSORS</td>
+  <td>CURSORS</td>
   <td>CONFIG1</td>
-  <td>UNK1</td>
+  <td>PEEK_VALUE</td>
   <td>STATUS_2</td>
   </tr>
 </table>-->
 
- - [0x00] **FIFO_STATUS** [RO]: Status of the TX and RX FIFOs
- - [0x04] **FIFO_TX** [WO]: Write to push a 32-bit word to the TX FIFO
- - [0x08] **FIFO_RX** [RO]: Read to consume a 32-bit word from the RX FIFO
+ - [0x00] **STATUS** [RO]: Status of the TX and RX FIFOs
+ - [0x04] **TX_PUSH** [WO]: Writes push a 32-bit word to the TX FIFO
+ - [0x08] **RX_PULL** [RO]: Reads consume a 32-bit word from the RX FIFO
 <!-- space -->
  - [0x20..0x3F] **BUS_IRQ_MASK** [RW]: IRQ mask area for bus-asserted interrupt lines
  - [0x40] **IRQ_MASK** [RW]: IRQ mask area for controller-asserted interrupt lines
@@ -163,16 +164,24 @@ The first of 3 MMIO areas in the ADT holds the following 32-bit registers:
  - [0x60..0x7F] **BUS_IRQ_ACK** [RW]: IRQ ACK area for bus-asserted interrupt lines
  - [0x80] **IRQ_ACK** [RW]: IRQ ACK area for controller-asserted interrupt lines
 <!-- space -->
- - [0xA0] **CONFIG1** [RW]: Bits 2..0 settable in T6031, 0x6 or 0x7 on boot. Master address?
+ - [0xA0] **CONFIG1** [RW]: Bits 0..2 settable, initialized by iBoot to 6 (`nub-spmi-aN`) or 7 (others). Master address?
+ - [0xA4] **ACTION1** [WO]: Writing 1 to some of the bits triggers some actions
 <!-- space -->
- - [0xB0] **FIFO_CURSORS** [RO]: Read/write cursor positions for the TX and RX FIFOs
- - [0xB4] **CONFIG2** [RW]: Bits 21..16 and 8 settable in T6031, 0 on boot
- - [0xB8] **UNK1** [RO]: Unknown, seems to measure a bunch of things, is affected by CONFIG1
+ - [0xB0] **CURSORS** [RO]: Read/write cursor positions for the TX and RX FIFOs
+ - [0xB4] **PEEK_POS** [RW]: FIFO and buffer position to peek
+ - [0xB8] **PEEK_VALUE** [RO]: Word at the position described by PEEK_POS
  - [0xBC] **STATUS1** [RO]: Only bit 0 seen, seems to indicate inability to talk on the bus?
 
 ## General operation
 
-To send an SPMI command on the bus, a batch of 32-bit words is pushed to the TX FIFO. When a complete batch is in the TX FIFO, there is enough space in the RX FIFO and the bus is free, the SPMI master side consumes the batch from the TX FIFO, sends the corresponding frames on the bus, and then writes a batch of words to the RX FIFO. The general structure of a batch of words in either FIFO is as follows:
+To send an SPMI command on the bus, a batch of 32-bit words is pushed to the TX FIFO. When all of the following conditions are fulfilled:
+
+- a complete, valid batch is next in the TX FIFO
+- there is enough free space in the RX FIFO
+- the bus is free
+- CONFIG1 holds a nonzero value (?)
+
+the SPMI master side consumes the batch from the TX FIFO, sends the corresponding frames on the bus, and writes a batch of words to the RX FIFO. The general structure of a batch of words in either FIFO is as follows:
 
  1. a command word (TX FIFO) or reply word (RX FIFO).
  2. 0 to 16 data bytes, which are packed into words in little-endian order, resulting in 0 to 4 words (as many as needed)
@@ -190,17 +199,17 @@ The amount of data bytes is determined by the OPCODE field in the command/reply 
 
 The general structure of a command word is as follows:
 
- - [Bits 0..7] **OPCODE**: 8-bit SPMI command opcode. Note that this isn't always the exact opcode that will be sent through the bus, sometimes it just identifies the general command type (e.g. write zero register, read register)
+ - [Bits 0..7] **OPCODE**: 8-bit SPMI command opcode. Note that this isn't always the exact opcode that will be sent through the bus, sometimes it just identifies the general command type (e.g. write zero register, read register), see SPMI commands below
  - [Bits 8..11] **SLAVE_ID**: 4-bit slave address
- - [Bit 15] **ALERT**: If set, the ALERT interrupt line is asserted when this command completes (see interrupts below)
+ - [Bit 15] **NOTIFY**: If set, the NOTIFY interrupt line is asserted when this command completes (see interrupts below)
  - [Bits 16..31] **PARAM**: 16-bit space for extra opcode-dependent parameters that aren't carried in the data bytes
 
 The general structure of a reply word is as follows:
 
- - [Bits 0..7] **OPCODE**: 8-bit SPMI opcode that was actually transmitted in the command frame (as stated above, this may not always match the OPCODE field in the command word)
+ - [Bits 0..7] **OPCODE**: 8-bit SPMI opcode that was actually transmitted in the command frame (as stated above, this may not always exactly match the OPCODE field in the command word)
  - [Bits 8..11] **SLAVE_ID**: 4-bit slave address (always matches command word)
  - [Bit 15] **ACK**: If the SPMI command includes an acknowledgment frame (basically all commands except reads) this bit carries its value (1 if acknowledged by the slave), otherwise 0
- - [Bits 16..31] **PARITY**: The N lower bits of this field (where N is the amount of input frames included in the SPMI command) hold the result of the parity check for each of those frames (1 if the check succeeded), the rest are zero
+ - [Bits 16..31] **PARITY**: The N lower bits of this field (where N is the amount of input frames included in the SPMI command, and thus the amount of data bytes following this word) hold the result of the parity check for each of those frames (1 if the check succeeded), the rest are zero
 
 Entire batches of words are consumed and pushed from/to the FIFOs atomically; once the first word of a batch is available, there's no need to wait for the other words.
 
@@ -225,7 +234,7 @@ In the OPCODE field, any bits specifying this info are ignored and replaced with
 
 For commands that can operate on multiple registers at once, and also allow accessing an extended register address space (extended read, extended write, extended read long, extended write long) the PARAM field holds the register address (0..0xFF for extended read/write, 0..0xFFFF for extended read/write long).
 
-The amount of data bytes following the command (writes) or reply (reads) is encoded in the OPCODE field as normal.
+The amount of data bytes following the command (writes) or reply (reads) is the amount of registers/bytes being read/written, as encoded in OPCODE.
 
 <!-- TODO: other commands -->
 
@@ -233,16 +242,25 @@ The amount of data bytes following the command (writes) or reply (reads) is enco
 
 Each of the FIFOs has a capacity of 64 words. Because all known batches can be at most 5 words, the controller can in the worst case hold up to 12 outstanding SPMI commands.
 
-FIFO_STATUS and FIFO_CURSORS return information about the TX FIFO in the low half-word, and the RX FIFO in the high half-word. A half-word in FIFO_STATUS has the following structure:
+STATUS and CURSORS return information about the TX FIFO in the low half-word, and the RX FIFO in the high half-word. A half-word in STATUS has the following structure:
  - [Bits 0..7] **COUNT**: Amount of words in the FIFO, 0..0x40
  - [Bit 8] **EMPTY**: Set if the FIFO is empty, e.g. COUNT == 0
  - [Bit 9] **FULL**: Set if the FIFO is full, e.g. COUNT == 0x40
 
-A half-word in FIFO_CURSORS has the following structure:
+A half-word in CURSORS has the following structure:
  - [Bits 0..7] **WRITE_CURSOR**: Buffer position of the next word to push, 0..0x3F
  - [Bits 8..15] **READ_CURSOR**: Buffer position of the next word to consume, 0..0x3F
 
-When both cursors are equal, the FIFO may be either empty or full; FIFO_STATUS may be used to disambiguate.
+When both cursors are equal, the FIFO may be either empty or full; STATUS may be used to disambiguate.
+
+Writing a 1 to bit 0 of the ACTION1 register clears both FIFOs.
+
+There is a debug mechanism to read arbitrary words from the buffer of a FIFO. PEEK_POS selects which word:
+
+ - [Bit 8] **FIFO_IDX**: FIFO to select (0 = TX, 1 = RX)
+ - [Bits 16..24] **CURSOR**: Buffer position to read (0..0x3F)
+
+And PEEK_VALUE returns the current value at the selection.
 
 ## Interrupts
 
@@ -250,13 +268,13 @@ The ADT lists several AIC interrupt lines, but only the second one seems to be o
 
 The mask area is at 0x20..0x5F; each bit is set to 1 if the corresponding line is unmasked, 0 if masked.
 
-The ACK area is shifted by 0x40, at 0x60..0x9F; each bit is set to 1 when the corresponding line triggers; writing a 1 to the bit clears it.
+The ACK area is shifted by +0x40, at 0x60..0x9F; each bit is set to 1 when the corresponding line triggers; writing a 1 to the bit clears it.
 
-The AIC line is asserted when at least one bit is set in both areas. The first 256 lines (first half of each area) appear to be triggered by participants in the bus (the SPMI spec doesn't specify a command for this, could be a master write command?). The rest are triggered by the controller itself when certain events occur. Note that masking a line doesn't prevent it from being triggered (and the corresponding bit set to 1 in the ACK area).
+The AIC line is asserted if at least one bit is set in both areas. The first 256 lines (first half of each area) appear to be triggered by participants in the bus (the SPMI spec doesn't specify a command for this, could be a master write command?). The rest are triggered by the controller itself when certain events occur. Note that masking a line doesn't prevent it from being triggered (and the corresponding bit set to 1 in the ACK area).
 
-At T6031, only the following controller-triggered lines are unmaskable:
+At M3, only the following controller-triggered lines are unmaskable:
 
- - [Bit 0] **ALERT**: Triggered when a command with the ALERT flag completes and its reply has been pushed to the RX FIFO
+ - [Bit 0] **NOTIFY**: Triggered when a command with the NOTIFY flag completes and its reply has been pushed to the RX FIFO
 <!-- space -->
  - [Bit 4]
  - [Bit 5]
@@ -272,4 +290,10 @@ At T6031, only the following controller-triggered lines are unmaskable:
  - [Bit 16]
  - [Bit 17]
 <!-- space -->
- - [Bit 27] **FAIL**: Triggered when attempting to consume a word from the RX FIFO while empty. Unlike the rest this one is level-triggered and I can't find the way to clear it (short of a reset)
+ - [Bit 23] (only on `nub-spmiN`)
+ - [Bit 24] (only on `nub-spmiN`)
+ - [Bit 25] (only on `nub-spmiN`)
+ - [Bit 26] (only on `nub-spmiN`)
+ - [Bit 27] **FAIL**: Triggered when attempting to consume a word from the RX FIFO while empty. Unlike the rest this one seems to be level-triggered and I can't find the way to clear it (short of a PMGR reset)
+ - [Bit 28] (only on `nub-spmiN`)
+ - [Bit 29] (only on `nub-spmiN`)
